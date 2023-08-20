@@ -21,6 +21,9 @@ class anounce(BaseModel):
     tittle:str
     discription:str
 
+class uid(BaseModel):
+    uuid:str
+    
     
     
     
