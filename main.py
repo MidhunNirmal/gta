@@ -135,6 +135,8 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
  
         return job1
     else:
+        
+        
         return "No suitable employee found" 
     
     
@@ -292,22 +294,20 @@ async def anounce(request:schemas.uid,db : Session = Depends(get_db)):
 async def user(db : Session = Depends(get_db),current_user: schemas.User= Depends(oaut2.get_current_active_user)):
     job = db.query(model.job).filter((model.job.userid ==current_user.uid)&(model.job.status ==True) ).first()
     show1 = db.query(model.adminjobstatus).filter(model.adminjobstatus.jid==job.jobid)
-    if show1:
-        show1.status = True
-        return show1
-    else:
+    
+   
 
     
     
-        adminotification = model.adminjobstatus( jid= job.jobid,uid =current_user.uid)
+    adminotification = model.adminjobstatus( jid= job.jobid,uid =current_user.uid) 
         
         
-        db.add(adminotification)
-        db.commit()
-        db.refresh(adminotification)
+    db.add(adminotification)
+    db.commit()
+    db.refresh(adminotification)
     
     
-        return current_user.uid
+    return current_user.uid
 
 
 
