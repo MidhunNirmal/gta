@@ -14,7 +14,7 @@ class user(Base):
     role = Column(String,default="user")
     epoint = Column(Integer,default=0)
     skillp = Column(Integer,nullable=True)
-    
+    jobassigned = Column(Boolean, default=False)
 class job(Base):
     __tablename__ = "job"
 
@@ -46,4 +46,11 @@ class anouncement(Base):
     tittle = Column(String)
     desc = Column(String)
     
+class adminjobstatus(Base):
+    __tablename__ = "status"
+    
+    id = Column(Integer, index=True, primary_key=True)
+    uid = Column(String)
+    jid = Column(String)
+    status = Column(Boolean,default=True)
    

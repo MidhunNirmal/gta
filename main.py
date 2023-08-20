@@ -109,7 +109,7 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
     user1 = db.query(model.user).filter(
         (model.user.skill == request.skill) &
         (model.user.skillp < skill_threshold) &
-        (model.user.epoint < 10)
+        (model.user.epoint < 10)&(model.user.jobassigned == False)
     ).first()
  
     if user1:
@@ -122,9 +122,11 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
             value=points,
             deadline=request.deadline,
             userid=user1.uid,
+            status = True,
         )
         
         job1.userid = user1.uid
+        user1.jobassigned = True
  
         db.add(job1)
         db.commit()
@@ -142,13 +144,13 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
     # user1 = db.query(model.user).filter(model.user.skill == request.skill)&(model.user.skill == request.skill) 
     
     # userid = str(uuid.uuid4())
-    job1 = model.job(jname = request.name,skill = request.skill,discription = request.discription,jobid = userid,priority= priority1,value = points,deadline=request.deadline)
-    job1.userid=user1.uid
+    # job1 = model.job(jname = request.name,skill = request.skill,discription = request.discription,jobid = userid,priority= priority1,value = points,deadline=request.deadline)
+    # job1.userid=user1.uid
     
     
-    db.add(job1)
-    db.commit()
-    db.refresh(job1)  
+    # db.add(job1)
+    # db.commit()
+    # db.refresh(job1)  
     
     
      
@@ -158,11 +160,15 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
 @app.put('/sucsess', tags=['jb'])
 async def reassign_hjob(request: schemas.job1, db: Session = Depends(get_db)):
     job = db.query(model.job).filter(model.job.jid == request.id1).first()
-    job.status = True
+    job.status = False
     user = db.query(model.user).filter(model.user.uid == job.userid).first()
     user.epoint=job.value
     user.skillp = user.skillp + job.count*5
-    return 'hii'
+    show1 = db.query(model.adminjobstatus).filter(model.adminjobstatus.jid==job.jobid)
+    show1.status == False
+    
+    
+    return user
 
 
 
@@ -174,7 +180,7 @@ async def reassign_job(request: schemas.job1, db: Session = Depends(get_db)):
     if not job:
         return "Job not found"  # Handle the case where the job doesn't exist
 
-    if job.status == False:
+    if job.status == True:
         user = db.query(model.user).filter(model.user.uid == job.userid).first()
 
         if not user:
@@ -194,6 +200,10 @@ async def reassign_job(request: schemas.job1, db: Session = Depends(get_db)):
             job_assign.userid3 = user.uid
         else:
             return "All slots for reassignment are filled"
+        user.skillp=user.skillp-15
+        user.jobassigned = False
+        
+        
  
         if job.value == 2:
             user1 = db.query(model.user).filter(
@@ -229,6 +239,7 @@ async def reassign_job(request: schemas.job1, db: Session = Depends(get_db)):
             return "correct difficulty level"
  
         job.userid = user1.uid
+        user1.jobassigned = True
  
         db.commit()
         db.refresh(job) 
@@ -254,19 +265,52 @@ async def user(db : Session = Depends(get_db)):
     ans = db.query(model.anouncement).all() 
     
     return ans
+
+
+@app.put('/admin_confirm',tags=['jb'])
+async def user(db : Session = Depends(get_db),current_user: schemas.User= Depends(oaut2.get_current_active_user)):
+    job = db.query(model.job).filter((model.job.userid ==current_user.uid)&(model.job.status ==True) ).first()
+    show1 = db.query(model.adminjobstatus).filter(model.adminjobstatus.jid==job.jobid)
+    if show1:
+        show1.status = True
+        return show1
+    else:
+
     
+    
+        adminotification = model.adminjobstatus( jid= job.jobid,uid =current_user.uid)
+        
+        
+        db.add(adminotification)
+        db.commit()
+        db.refresh(adminotification)
+    
+    
+        return current_user.uid
+
+
+
+@app.get('/admin_notifcation',tags=['jb'])
+async def user(db : Session = Depends(get_db)):
+    show1 = db.query(model.adminjobstatus).filter(model.adminjobstatus.status==True).all()
+    return show1
+    
+
 
 
 
 
 @app.put('/reject',tags=['jb'])
-async def user(request:schemas.job1,db : Session = Depends(get_db)):
+async def user(request:schemas.job1,db : Session = Depends(get_db)): 
     
 
     if job2.count<4:
         job2 = db.query(model.job).filter(model.job.jid == request.id1).first()
         job2.count = job2.count+1
+        show1 = db.query(model.adminjobstatus).filter(model.adminjobstatus.jid==request.id1)
+        show1.status = False
     else:
+        
         return "reassign"
     
     
@@ -345,7 +389,7 @@ async def user(request:schemas.User1,db : Session = Depends(get_db),get_current_
     db.commit()
     db.refresh(user1) 
     
-    data = "myreeee"
+    data = "hii"
     await send_notification(data)
     
     return user 
@@ -358,9 +402,6 @@ async def user(request:schemas.User1,db : Session = Depends(get_db),get_current_
 #     user.points=user.points+10
 #     db.commit()
 #     return "updated 10 points"
-
-
-
 
 #login
 
