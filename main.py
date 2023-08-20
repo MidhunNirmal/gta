@@ -108,22 +108,23 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
  
     user1 = db.query(model.user).filter(
         (model.user.skill == request.skill) &
-        (model.user.skillp < skill_threshold) &
+        (model.user.skillp <= skill_threshold) &
         (model.user.epoint < 10)&(model.user.jobassigned == False)
     ).first()
- 
+    
+    userid = str(uuid.uuid4()) 
     if user1:
         job1 = model.job(
-            jname=request.name,
+            jname=request.name, 
             skill=request.skill,
             discription=request.discription,
-            jobid=uuid.uuid4().hex,
+            jobid=userid,
             priority=points,
-            value=points,
+            value=points, 
             deadline=request.deadline,
             userid=user1.uid,
             status = True,
-        )
+        ) 
         
         job1.userid = user1.uid
         user1.jobassigned = True
@@ -134,7 +135,7 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
  
         return job1
     else:
-        return "No suitable employee found"
+        return "No suitable employee found" 
     
     
     
@@ -218,7 +219,7 @@ async def reassign_job(request: schemas.job1, db: Session = Depends(get_db)):
         elif job.value == 3:
             user1 = db.query(model.user).filter(
                 (model.user.skill == request.skill) &
-                (40 <= model.user.skillp < 70) &
+                (40 >= model.user.skillp < 70) &
                 (model.user.epoint < 10) &
                 (model.user.uid != job_assign.userid1) &
                 (model.user.uid != job_assign.userid2) &
@@ -267,6 +268,26 @@ async def user(db : Session = Depends(get_db)):
     return ans
 
 
+
+@app.get('/show_currentuser_jobs',tags=['jb'])
+async def showuserjobs(db : Session = Depends(get_db),current_user: schemas.User= Depends(oaut2.get_current_active_user)):
+    job = db.query(model.job).filter((model.job.userid ==current_user.uid)&(model.job.status ==True) ).first()
+    return job
+
+
+@app.post('/show_jobdetails',tags=['jb'])
+async def anounce(request:schemas.uid,db : Session = Depends(get_db)):
+    job = db.query(model.job).filter((model.job.jobid ==request.uuid)).first()
+    
+    user = db.query(model.user).filter(model.user.uid == job.userid).first()
+    
+    return {'username':user.name,'jname':job.jname,'discrb':job.discription,'deadline':job.deadline}
+    
+
+
+ 
+ 
+
 @app.put('/admin_confirm',tags=['jb'])
 async def user(db : Session = Depends(get_db),current_user: schemas.User= Depends(oaut2.get_current_active_user)):
     job = db.query(model.job).filter((model.job.userid ==current_user.uid)&(model.job.status ==True) ).first()
@@ -294,6 +315,16 @@ async def user(db : Session = Depends(get_db),current_user: schemas.User= Depend
 async def user(db : Session = Depends(get_db)):
     show1 = db.query(model.adminjobstatus).filter(model.adminjobstatus.status==True).all()
     return show1
+
+
+
+
+
+@app.get('/unallocated work',tags=['jb'])
+async def user(db : Session = Depends(get_db)): 
+    ans = db.query(model.job).filter(model.job.status==False).all() 
+    
+    return ans
     
 
 
