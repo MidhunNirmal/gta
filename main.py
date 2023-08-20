@@ -85,7 +85,11 @@ async def user(request:schemas.User1,db : Session = Depends(get_db)):
     
     return user1
 
-
+@app.post('/get_emp', tags=['em'])
+async def add_job(request: schemas.uid, db: Session = Depends(get_db)):
+    jobuser = db.query(model.user).filter(model.user.uid == request.uuid).first()
+    return jobuser
+    
 
 
 @app.post('/add_job', tags=['jb'])
@@ -152,12 +156,13 @@ async def add_job(request: schemas.job, db: Session = Depends(get_db)):
     return user1
 
 @app.put('/sucsess', tags=['jb'])
-async def reassign_job(request: schemas.job1, db: Session = Depends(get_db)):
+async def reassign_hjob(request: schemas.job1, db: Session = Depends(get_db)):
     job = db.query(model.job).filter(model.job.jid == request.id1).first()
     job.status = True
     user = db.query(model.user).filter(model.user.uid == job.userid).first()
     user.epoint=job.value
     user.skillp = user.skillp + job.count*5
+    return 'hii'
 
 
 
@@ -238,6 +243,9 @@ async def reassign_job(request: schemas.job1, db: Session = Depends(get_db)):
 @app.post('/anounce',tags=['jb'])
 async def anounce(request:schemas.anounce,db : Session = Depends(get_db)):
     ans = model.anouncement(tittle = request.tittle,desc = request.discription)
+    db.add(ans)
+    db.commit()
+    db.refresh(ans)
     
     return ans
 
